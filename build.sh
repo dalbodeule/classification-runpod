@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Variables
-IMAGE_NAME="dalbodeule/runpod-classfication"
+IMAGE_NAME="dalbodeule/runpod-classification"
 VERSION_TAG="latest"
 DATE_TAG=$(date "+%Y%m%d")
 
