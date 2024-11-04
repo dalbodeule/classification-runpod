@@ -7,10 +7,10 @@ DATE_TAG=$(date "+%Y%m%d")
 
 # Build Dockerfile (CPU version)
 DOCKER_BUILDKIT=1 docker buildx create --use || true
-DOCKER_BUILDKIT=1 docker buildx build --file Dockerfile --platform linux/amd64,linux/arm64 -t ${IMAGE_NAME}:cpu-${VERSION_TAG} -t ${IMAGE_NAME}:cpu-${DATE_TAG} . --push
+DOCKER_BUILDKIT=1 docker buildx build --file Dockerfile --platform linux/amd64,linux/arm64 -t ${IMAGE_NAME}:cpu-${VERSION_TAG} -t ${IMAGE_NAME}:cpu-${DATE_TAG} -t ${IMAGE_NAME}:cpu . --push
 
 # Build Dockerfile.cuda (CUDA version)
-DOCKER_BUILDKIT=1 docker buildx build --file Dockerfile.cuda --platform linux/amd64,linux/arm64 -t ${IMAGE_NAME}:cuda-${VERSION_TAG} -t ${IMAGE_NAME}:cuda-${DATE_TAG}. --push
+DOCKER_BUILDKIT=1 docker buildx build --file Dockerfile.cuda --platform linux/amd64,linux/arm64 -t ${IMAGE_NAME}:cuda-${VERSION_TAG} -t ${IMAGE_NAME}:cuda-${DATE_TAG} -t ${IMAGE_NAME}:cuda . --push
 
 # Create and push a multi-arch manifest for CPU version
 DOCKER_CLI_EXPERIMENTAL=enabled docker manifest create ${IMAGE_NAME}:cpu-${VERSION_TAG} \
