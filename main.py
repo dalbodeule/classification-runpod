@@ -67,6 +67,5 @@ def handler(job):
 if __name__ == "__main__":
     # Start RunPod serverless inference
     runpod.serverless.start({
-        "handler": handler,
-        "return_aggregate_system": True
+        "handler": handler
     })

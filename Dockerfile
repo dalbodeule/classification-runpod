@@ -8,13 +8,10 @@ COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the application code
-COPY . .
-
-# Expose the port that the server will run on
-EXPOSE 8000
+COPY main.py /app/
 
 # Set environment variable for the model name
 ENV MODEL_NAME="google-bert/bert-base-uncased"
 
 # Run the server
-CMD ["python", "-u", "main.py"]
+CMD ["python", "-u", "/app/main.py"]
