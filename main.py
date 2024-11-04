@@ -3,7 +3,7 @@ import torch
 import os
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
-async def handler(job):
+def load_model():
     # Load model and tokenizer outside the handler
     model_name = os.getenv("MODEL_NAME", "")
 
@@ -23,12 +23,21 @@ async def handler(job):
     # Set model to evaluation mode
     model.eval()
 
+    return (model, tokenizer)
+
+def handler(job):
+    global tokenizer
+    global model
+
+    if 'model' not in globals() or 'tokenizer' not in globals():
+        model, tokenizer = load_model()
+
     # Extract text from the event
     input_data = job.get("input", {})
     texts = input_data.get("prompt", [])
 
     if not texts or not isinstance(texts, list):
-        return {"error": "Text is not provided or in the wrong format."}
+        yield {"error": "Text is not provided or in the wrong format."}
 
     # Tokenize and prepare input for batch
     inputs = tokenizer(texts, return_tensors="pt", truncation=True, padding=True).to(device)
@@ -39,18 +48,21 @@ async def handler(job):
 
     # Process outputs for batch
     logits = outputs.logits
+
     if logits.shape[1] > 1:  # Multi-label or single-label classification
         probabilities_batch = torch.softmax(logits, dim=1)
-
+        results = []
         for idx, probs in enumerate(probabilities_batch):
             runpod.serverless.progress_update(job, f"Updated {idx + 1}/{len(texts)}")
-            yield [{ "label": f"label_{i}", "score": float(prob) } for i, prob in enumerate(probs)]
+            results.append([{ "label": f"label_{i}", "score": float(prob) } for i, prob in enumerate(probs)])
     else:  # Binary classification case
         probabilities_batch = torch.sigmoid(logits)
-        
+        results = []
         for idx, prob in enumerate(probabilities_batch):
             runpod.serverless.progress_update(job, f"Updated {idx + 1}/{len(texts)}")
-            yield [{ "label": "positive", "score": float(prob) }, { "label": "negative", "score": 1.0 - float(prob) }]
+            results.append([{ "label": "positive", "score": float(prob) }, { "label": "negative", "score": 1.0 - float(prob) }])
+
+    return {"predictions": results}
 
 if __name__ == "__main__":
     # Start RunPod serverless inference
