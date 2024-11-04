@@ -3,15 +3,16 @@
 # Variables
 IMAGE_NAME="dalbodeule/runpod-classfication"
 VERSION_TAG="latest"
+DATE_TAG=$(date "+%Y%m%d")
 
 # Build Dockerfile (CPU version)
 DOCKER_BUILDKIT=1 docker buildx create --use || true
-DOCKER_BUILDKIT=1 docker buildx build --file Dockerfile --platform linux/amd64 -t ${IMAGE_NAME}:amd64-cpu-${VERSION_TAG} . --push
-DOCKER_BUILDKIT=1 docker buildx build --file Dockerfile --platform linux/arm64 -t ${IMAGE_NAME}:arm64-cpu-${VERSION_TAG} . --push
+DOCKER_BUILDKIT=1 docker buildx build --file Dockerfile --platform linux/amd64 -t ${IMAGE_NAME}:amd64-cpu-${VERSION_TAG} -t ${IMAGE_NAME}:amd64-cpu-${DATE_TAG} . --push
+DOCKER_BUILDKIT=1 docker buildx build --file Dockerfile --platform linux/arm64 -t ${IMAGE_NAME}:arm64-cpu-${VERSION_TAG} -t ${IMAGE_NAME}:arm64-cpu-${DATE_TAG}. --push
 
 # Build Dockerfile.cuda (CUDA version)
-DOCKER_BUILDKIT=1 docker buildx build --file Dockerfile.cuda --platform linux/amd64 -t ${IMAGE_NAME}:amd64-cuda-${VERSION_TAG} . --push
-DOCKER_BUILDKIT=1 docker buildx build --file Dockerfile.cuda --platform linux/arm64 -t ${IMAGE_NAME}:arm64-cuda-${VERSION_TAG} . --push
+DOCKER_BUILDKIT=1 docker buildx build --file Dockerfile.cuda --platform linux/amd64 -t ${IMAGE_NAME}:amd64-cuda-${VERSION_TAG} -t ${IMAGE_NAME}:amd64-cuda-${DATE_TAG}. --push
+DOCKER_BUILDKIT=1 docker buildx build --file Dockerfile.cuda --platform linux/arm64 -t ${IMAGE_NAME}:arm64-cuda-${VERSION_TAG} -t ${IMAGE_NAME}:arm64-cuda-${DATE_TAG}. --push
 
 # Create and push a multi-arch manifest for CPU version
 DOCKER_CLI_EXPERIMENTAL=enabled docker manifest create ${IMAGE_NAME}:cpu-${VERSION_TAG} \
