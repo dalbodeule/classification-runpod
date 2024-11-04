@@ -33,4 +33,4 @@ COPY main.py /app/
 ENV MODEL_NAME="google-bert/bert-base-uncased"
 
 # 서버 실행
-CMD ["/venv/bin/python3", "-u", "main.py"]
+CMD ["$VENV_DIR/bin/python", "-u", "/app/main.py"]

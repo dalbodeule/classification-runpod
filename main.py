@@ -16,13 +16,6 @@ def load_model():
     except Exception as e:
         return { "error": f"Error loading model {model_name}: {str(e)}"}
 
-    # Move model to GPU if available
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model.to(device)
-
-    # Set model to evaluation mode
-    model.eval()
-
     return (model, tokenizer)
 
 def handler(job):
@@ -31,6 +24,13 @@ def handler(job):
 
     if 'model' not in globals() or 'tokenizer' not in globals():
         model, tokenizer = load_model()
+    
+    # Move model to GPU if available
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
+
+    # Set model to evaluation mode
+    model.eval()
 
     # Extract text from the event
     input_data = job.get("input", {})
@@ -64,8 +64,7 @@ def handler(job):
 
     return {"predictions": results}
 
-if __name__ == "__main__":
-    # Start RunPod serverless inference
-    runpod.serverless.start({
-        "handler": handler
-    })
+# Start RunPod serverless inference
+runpod.serverless.start({
+    "handler": handler
+})
