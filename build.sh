@@ -3,7 +3,7 @@
 # Variables
 IMAGE_NAME="dalbodeule/runpod-classification"
 VERSION_TAG="latest"
-DATE_TAG="$(date "+%Y%m%d")-2"
+DATE_TAG="$(date "+%Y%m%d")"
 
 # Create buildx instance only if not already existing
 if ! docker buildx inspect > /dev/null 2>&1; then
