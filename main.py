@@ -2,67 +2,60 @@ import runpod
 import torch
 import os
 import json
+import asyncio
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
+# 모델과 토크나이저 로드
 def load_model():
-    # Load model and tokenizer outside the handler
     model_name = os.getenv("MODEL_NAME", "")
-
     if not model_name:
-        return json.dumps({ "error": "MODEL_NAME env is not provided."})
-
+        return json.dumps({"error": "MODEL_NAME env is not provided."})
     try:
         tokenizer = AutoTokenizer.from_pretrained(model_name)
         model = AutoModelForSequenceClassification.from_pretrained(model_name)
     except Exception as e:
-        return json.dumps({ "error": f"Error loading model {model_name}: {str(e)}"})
+        return json.dumps({"error": f"Error loading model {model_name}: {str(e)}"})
+    return model, tokenizer
 
-    return (model, tokenizer)
+# 각 텍스트 검증 및 예측을 수행하는 비동기 함수
+async def process_text(model, tokenizer, text, device):
+    inputs = tokenizer(text, return_tensors="pt", truncation=True, padding=True).to(device)
+    with torch.no_grad():
+        outputs = model(**inputs)
+    
+    # Process outputs
+    logits = outputs.logits
+    probabilities = torch.softmax(logits, dim=-1).tolist()
+    labels = model.config.id2label
+    
+    result = [{"label": labels[i], "score": score} for i, score in enumerate(probabilities[0])]
+    return result
 
-def handler(job):
+# 핸들러 함수
+async def handler(job):
     global tokenizer
     global model
-
+    
+    # 모델과 토크나이저가 없으면 로드
     if 'model' not in globals() or 'tokenizer' not in globals():
         model, tokenizer = load_model()
     
-    # Move model to GPU if available
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
-
-    # Set model to evaluation mode
     model.eval()
-
-    # Extract text from the event
+    
     input_data = job.get("input", {})
-    texts = input_data.get("prompt", [])
-
+    texts = input_data.get("prompts", [])  # Batch inputs
+    
     if not texts or not isinstance(texts, list):
-        return json.dumps({"error": "Text is not provided or in the wrong format."})
-
-    # Tokenize and prepare input for batch
-    inputs = tokenizer(texts, return_tensors="pt", truncation=True, padding=True).to(device)
-
-    # Perform inference
-    with torch.no_grad():
-        outputs = model(**inputs)
-
-    # Process outputs for batch
-    logits = outputs.logits
-
-    # Get the label mapping
-    labels = model.config.id2label # Retrieves the vocabulary, but you may need a specific mapping
-
-    # Prepare results
-    results = []
-    for logit in logits:
-        probabilities = torch.softmax(logit, dim=-1).tolist()
-        result = [{"label": labels[i], "score": score} for i, score in enumerate(probabilities)]
-        results.append(result)
-
+        return json.dumps({"error": "Texts are not provided or in the wrong format."})
+    
+    # 비동기적으로 모든 텍스트 처리
+    results = await asyncio.gather(*(process_text(model, tokenizer, text, device) for text in texts))
+    
     return json.dumps({"predictions": results})
 
-# Start RunPod serverless inference
+# RunPod 서버리스 인퍼런스 시작
 runpod.serverless.start({
     "handler": handler
 })
