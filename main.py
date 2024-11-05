@@ -52,13 +52,12 @@ def handler(job):
 
     # Get the label mapping
     labels = model.config.id2label # Retrieves the vocabulary, but you may need a specific mapping
-    label_list = list(labels.keys())  # or your specific label mapping
 
     # Prepare results
     results = []
     for logit in logits:
         probabilities = torch.softmax(logit, dim=-1).tolist()
-        result = [{"label": label_list[i], "score": score} for i, score in enumerate(probabilities)]
+        result = [{"label": labels[i], "score": score} for i, score in enumerate(probabilities)]
         results.append(result)
 
     return json.dumps({"predictions": results})
