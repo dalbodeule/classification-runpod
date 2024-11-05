@@ -50,18 +50,16 @@ def handler(job):
     # Process outputs for batch
     logits = outputs.logits
 
-    if logits.shape[1] > 1:  # Multi-label or single-label classification
-        probabilities_batch = torch.softmax(logits, dim=1)
-        results = []
-        for idx, probs in enumerate(probabilities_batch):
-            runpod.serverless.progress_update(job, f"Updated {idx + 1}/{len(texts)}")
-            results.append([{ "label": f"label_{i}", "score": float(prob) } for i, prob in enumerate(probs)])
-    else:  # Binary classification case
-        probabilities_batch = torch.sigmoid(logits)
-        results = []
-        for idx, prob in enumerate(probabilities_batch):
-            runpod.serverless.progress_update(job, f"Updated {idx + 1}/{len(texts)}")
-            results.append([{ "label": "positive", "score": float(prob) }, { "label": "negative", "score": 1.0 - float(prob) }])
+    # Get the label mapping
+    labels = model.config.id2label # Retrieves the vocabulary, but you may need a specific mapping
+    label_list = list(labels.keys())  # or your specific label mapping
+
+    # Prepare results
+    results = []
+    for logit in logits:
+        probabilities = torch.softmax(logit, dim=-1).tolist()
+        result = [{"label": label_list[i], "score": score} for i, score in enumerate(probabilities)]
+        results.append(result)
 
     return json.dumps({"predictions": results})
 
