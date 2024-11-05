@@ -10,11 +10,6 @@ WORKDIR /app
 # requirements.cuda.txt를 복사하고 패키지 설치
 COPY requirements.cuda.txt /app/
 
-# 필수 패키지 설치를 위한 APT 캐시를 줄이기 위해
-RUN apt update && \
-    apt install -y python${PYTHON_VERSION} python3-venv python3-pip && \
-    rm -rf /var/lib/apt/lists/*  # APT 리스트 캐시를 청소하여 이미지 크기 감소
-
 # 패키지 설치
 RUN pip install --no-cache-dir -r requirements.cuda.txt
 
