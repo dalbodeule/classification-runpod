@@ -1,6 +1,7 @@
 import runpod
 import torch
 import os
+import json
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 def load_model():
@@ -8,13 +9,13 @@ def load_model():
     model_name = os.getenv("MODEL_NAME", "")
 
     if not model_name:
-        return { "error": "MODEL_NAME env is not provided."}
+        return json.dumps({ "error": "MODEL_NAME env is not provided."})
 
     try:
         tokenizer = AutoTokenizer.from_pretrained(model_name)
         model = AutoModelForSequenceClassification.from_pretrained(model_name)
     except Exception as e:
-        return { "error": f"Error loading model {model_name}: {str(e)}"}
+        return json.dumps({ "error": f"Error loading model {model_name}: {str(e)}"})
 
     return (model, tokenizer)
 
@@ -37,7 +38,7 @@ def handler(job):
     texts = input_data.get("prompt", [])
 
     if not texts or not isinstance(texts, list):
-        yield {"error": "Text is not provided or in the wrong format."}
+        return json.dumps({"error": "Text is not provided or in the wrong format."})
 
     # Tokenize and prepare input for batch
     inputs = tokenizer(texts, return_tensors="pt", truncation=True, padding=True).to(device)
@@ -62,7 +63,7 @@ def handler(job):
             runpod.serverless.progress_update(job, f"Updated {idx + 1}/{len(texts)}")
             results.append([{ "label": "positive", "score": float(prob) }, { "label": "negative", "score": 1.0 - float(prob) }])
 
-    return {"predictions": results}
+    return json.dumps({"predictions": results})
 
 # Start RunPod serverless inference
 runpod.serverless.start({
