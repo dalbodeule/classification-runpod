@@ -45,7 +45,7 @@ async def handler(job):
     model.eval()
     
     input_data = job.get("input", {})
-    texts = input_data.get("prompts", [])  # Batch inputs
+    texts = input_data.get("prompt", [])  # Batch inputs
     
     if not texts or not isinstance(texts, list):
         return json.dumps({"error": "Texts are not provided or in the wrong format."})
